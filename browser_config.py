@@ -27,7 +27,7 @@ def create_browser(chromedriver_path, headless=False):
 
 
     # Set up the Service object for the ChromeDriver executable
-    service = Service('driver/chromedriver.exe')
+    service = Service('/usr/local/bin/chromedriver')
 
     # Initialize the WebDriver with the service object and options
     browser = webdriver.Chrome(service=service, options=opt)
