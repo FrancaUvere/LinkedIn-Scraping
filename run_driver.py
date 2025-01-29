@@ -10,6 +10,7 @@ from selenium.webdriver.common.action_chains  import ActionChains
 from browser_config import create_browser
 from config import Config
 from functions import *
+from selenium.common.exceptions import TimeoutException
 
 
 profile_url, new_file, file_name = prompt_user_profile_details()
@@ -21,8 +22,12 @@ if driver.current_url != 'https://www.linkedin.com/feed/':
 
 
 url = profile_url + '/recent-activity/all/'
-
-driver.execute_script("window.open('');")   # Open a new tab
+try:
+    driver.execute_script("window.open('');")   # Open a new tab
+except TimeoutException as e:
+        print("A timeout occurred while trying to load the page. Please, check your internet connection and try again.")
+        driver.quit()
+        exit()
 
 # Switch to the new tab
 driver.switch_to.window(driver.window_handles[1])
@@ -43,14 +48,17 @@ while True:
     except:
         time.sleep(3)
         pass
+
+
 user_profile_info['ProfileID'] = profile_url.split('-')[-1]
+print('Here is the profile info: {}'.format(user_profile_info))
 
 
 time.sleep(7)
 
 
 
-posts, driver = find_posts(driver)
+class_name, driver = find_posts(driver)
 
 
 
@@ -59,15 +67,19 @@ list_users_like = {}
 list_users_comments = {}
 total_no_likes = 0
 total_no_comments = 0
-for post in posts:
-    if j==10:  # chnage to 10
-        break
+for j in range(10):
+    # if j==10:  # chnage to 10
+    #     break
     try:
+        post = driver.find_elements(By.CSS_SELECTOR, f'li.{class_name}')[j]
+        driver.execute_script("arguments[0].scrollIntoView();", post)
+        print(f"{j}: {post}", end='\n\n')
         print(f'Getting post {j}', end='\n\n')
-        number_likes, comment_number = get_likes_comments(post)
+        number_likes, comment_number = get_likes_comments(post, driver)
+        print(f"Gotten {number_likes} likes and {comment_number} comments from post {j}")
         total_no_likes += int(number_likes)
         total_no_comments += int(comment_number)
-        print(f'Getting users from post likes. Found {number_likes} likes.')
+        print(f'Getting users from post {j}likes.')
         users = get_users_likes(post, number_likes, max_no, driver)
        
         # users = get_users_likes(post, number_likes, driver)
@@ -103,7 +115,6 @@ for post in posts:
     except Exception as e:
         print('Failed to get users from current post. Moving on...')
         time.sleep(2)
-        pass
 
 
 if len(list_users_like) > 0 or len(list_users_comments) > 0:
